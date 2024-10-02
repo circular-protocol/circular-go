@@ -203,7 +203,7 @@ func GetKeysFromString(seedPhrase string) (map[string]string, error) {
 	publicKeyDER := publicKey.SerializeUncompressed()
 
 	// Generate address from public key
-	address := sha256.Sum256(publicKey.SerializeCompressed())
+	address := sha256.Sum256(publicKeyDER)
 	addressDER := hex.EncodeToString(address[:])
 
 	// Create a map to hold the results
