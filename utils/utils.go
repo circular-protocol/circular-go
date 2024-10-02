@@ -185,32 +185,36 @@ func bytesToHex(b []byte) string {
 	return hex.EncodeToString(b)
 }
 
-func GetKeysFromString(seedPhrase string) map[string]string {
-	seedHash := chainhash.DoubleHashB([]byte(seedPhrase))
+func GenerateKeys(seedPhrase string) (map[string]string, error) {
+	// Generate private key using RFC 6979
+	hashHex := Sha256(seedPhrase)
+	hash, err := hex.DecodeString(hashHex)
+	if err != nil {
+		return nil, err
+	}
 
-	privateKey := secp256k1.PrivKeyFromBytes(seedHash)
-
+	privateKey := secp256k1.PrivKeyFromBytes(hash)
 	publicKey := privateKey.PubKey()
 
-	publicKeyASN1 := ECDSASignature{
-		R: publicKey.X(),
-		S: publicKey.Y(),
-	}
-	publicKeyDER, _ := asn1.Marshal(publicKeyASN1)
+	// Encode private key in DER format
+	privateKeyDER := privateKey.Serialize()
 
-	publicKeyHex := bytesToHex(publicKeyDER)
-	addressHash := Sha256(publicKeyHex)
+	// Encode public key in DER format
+	publicKeyDER := publicKey.SerializeCompressed()
 
-	publicKeyString := hex.EncodeToString(publicKey.SerializeCompressed())
-	addressString := hex.EncodeToString([]byte(addressHash))
-	privateKeyString := hex.EncodeToString(privateKey.Serialize())
+	// Generate address from public key
+	address := sha256.Sum256(publicKey.SerializeCompressed())
+	addressDER := hex.EncodeToString(address[:])
 
-	return map[string]string{
-		"publicKey":  publicKeyString,
-		"address":    addressString,
-		"privateKey": privateKeyString,
+	// Create a map to hold the results
+	result := map[string]string{
+		"privateKey": bytesToHex(privateKeyDER),
+		"publicKey":  bytesToHex(publicKeyDER),
+		"address":    addressDER,
 		"seedPhrase": seedPhrase,
 	}
+
+	return result, nil
 }
 
 // NAG FUNCTIONS
