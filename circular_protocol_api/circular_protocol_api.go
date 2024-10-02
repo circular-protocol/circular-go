@@ -518,35 +518,6 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 	dataToHash := blockchain + from + to + hexPayload + newNonce + timestamp
 	id := utils.Sha256(dataToHash)
 
-	/* 	bytesPrivateKey, err := hex.DecodeString(privateKey)
-	   	if err != nil {
-	   		return map[string]interface{}{
-	   			"Error": "Error during the decoding of the private key", "Details": err,
-	   		}
-	   	}
-
-	   	privKey := secp256k1.PrivKeyFromBytes(bytesPrivateKey)
-	   	messageHash := chainhash.HashB([]byte(id))
-	   	r, s, err := ecdsa.Sign(rand.Reader, privKey.ToECDSA(), messageHash)
-	   	if err != nil {
-	   		return map[string]interface{}{
-	   			"Error": "Error during the signature", "Details": err,
-	   		}
-	   	}
-	   	type ECDSASignature struct {
-	   		R, S *big.Int
-	   	}
-
-	   	derSignature, err := asn1.Marshal(ECDSASignature{R: r, S: s})
-
-	   	if err != nil {
-	   		return map[string]interface{}{
-	   			"Error": "Error during the DER conversion", "Details": err,
-	   		}
-	   	}
-
-	   	stringDERSignature := hex.EncodeToString(derSignature) */
-
 	signature := utils.SignMessage(id, privateKey)
 
 	if signature["Error"] != nil {
@@ -555,9 +526,6 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 		}
 	}
 
-	/* r := signature["R"]
-	s := signature["S"] */
-
 	stringDERSignature := signature["Signature"].(string)
 	isValid, verification := utils.VerifySignature(id, stringDERSignature, privateKey)
 	if !isValid || verification["Error"] != nil {
@@ -565,13 +533,6 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 			"Error": "Error during the verification of the signature",
 		}
 	}
-	/*
-		pubKey := privKey.PubKey()
-		if !ecdsa.Verify(pubKey.ToECDSA(), messageHash, r, s) {
-			return map[string]interface{}{
-				"Error": "Signature verification failed",
-			}
-		} */
 
 	response = SendTransaction(id, from, to, timestamp, transactionType, hexPayload, newNonce, stringDERSignature, blockchain)
 	return response
