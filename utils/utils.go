@@ -147,41 +147,6 @@ type ECDSASignature struct {
 	R, S *big.Int
 }
 
-func VerifySignature(message string, signature string, publicKey string) (bool, map[string]interface{}) {
-
-	bytesPublicKey, err := hex.DecodeString(publicKey)
-
-	if err != nil {
-		return false, map[string]interface{}{"Error": "Error during the decoding of the public key"}
-	}
-
-	bytesSignature, err := hex.DecodeString(signature)
-
-	if err != nil {
-		return false, map[string]interface{}{"Error": "Error during the decoding of the signature"}
-	}
-
-	messageHash := chainhash.HashB([]byte(message))
-
-	var ecdsaSignature ECDSASignature
-	_, err = asn1.Unmarshal(bytesSignature, &ecdsaSignature)
-	if err != nil {
-		return false, map[string]interface{}{"Error": "Error during the decoding of the signature"}
-	}
-
-	pubKey, err := secp256k1.ParsePubKey(bytesPublicKey)
-	if err != nil {
-		return false, map[string]interface{}{"Error": "Error during the parsing of the public key"}
-	}
-
-	if !ecdsa.Verify(pubKey.ToECDSA(), messageHash, ecdsaSignature.R, ecdsaSignature.S) {
-		return false, map[string]interface{}{"Error": "Signature verification failed"}
-
-	}
-
-	return true, map[string]interface{}{"Message": message, "Signature": signature, "PublicKey": publicKey}
-}
-
 func GetPublicKey(privateKey string) (string, error) {
 	// Decodifica la chiave privata dalla sua rappresentazione esadecimale
 	privKeyBytes, err := hex.DecodeString(privateKey)
