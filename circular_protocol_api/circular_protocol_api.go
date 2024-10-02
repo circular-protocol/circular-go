@@ -497,7 +497,8 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return map[string]interface{}{
-			"Error": "Wrong payload format",
+			"Result":   "500",
+			"Response": "Error during the payload conversion",
 		}
 	}
 	hexPayload := utils.StringToHex(string(jsonPayload))
@@ -506,14 +507,16 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 	responseMap, ok := response["Response"].(map[string]interface{})
 	if !ok {
 		return map[string]interface{}{
-			"Error": "Invalid response format from GetWalletNonce",
+			"Result":   "500",
+			"Response": "Error during the nonce retrieval",
 		}
 	}
 
 	nonceFloat, ok := responseMap["Nonce"].(float64)
 	if !ok {
 		return map[string]interface{}{
-			"Error": "Nonce not found in response",
+			"Result":   "500",
+			"Response": "Error during the nonce conversion",
 		}
 	}
 
@@ -526,7 +529,8 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 	bytesPrivateKey, err := hex.DecodeString(privateKey)
 	if err != nil {
 		return map[string]interface{}{
-			"Error": "Error during the decoding of the private key", "Details": err,
+			"Result":   "500",
+			"Response": "Error during the decoding of the private key",
 		}
 	}
 
@@ -535,7 +539,8 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 	r, s, err := ecdsa.Sign(rand.Reader, privKey.ToECDSA(), messageHash)
 	if err != nil {
 		return map[string]interface{}{
-			"Error": "Error during the signature", "Details": err,
+			"Result":   "500",
+			"Response": "Error during the signing of the message",
 		}
 	}
 	type ECDSASignature struct {
@@ -546,7 +551,8 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 
 	if err != nil {
 		return map[string]interface{}{
-			"Error": "Error during the DER conversion", "Details": err,
+			"Result":   "500",
+			"Response": "Error during the encoding of the signature",
 		}
 	}
 
@@ -555,7 +561,8 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 	pubKey := privKey.PubKey()
 	if !ecdsa.Verify(pubKey.ToECDSA(), messageHash, r, s) {
 		return map[string]interface{}{
-			"Error": "Signature verification failed",
+			"Result":   "500",
+			"Response": "Error during the verification of the signature",
 		}
 	}
 

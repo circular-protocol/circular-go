@@ -33,7 +33,8 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		response := map[string]interface{}{
-			"Error": "Wrong JSON format",
+			"Result":   "500",
+			"Response": "Wrong JSON format",
 		}
 
 		return response
@@ -43,7 +44,8 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		response := map[string]interface{}{
-			"Error": "Error during the creation of the request",
+			"Result":   "500",
+			"Response": "Error during the creation of the request",
 		}
 
 		return response
@@ -55,7 +57,8 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	resp, err := client.Do(req)
 	if err != nil {
 		response := map[string]interface{}{
-			"Error": "Error during the request",
+			"Result":   "500",
+			"Response": "Error during the sending of the request",
 		}
 
 		return response
@@ -66,7 +69,8 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		response := map[string]interface{}{
-			"Error": "Error during the reading of the response",
+			"Result":   "500",
+			"Response": "Error during the reading of the response",
 		}
 
 		return response
@@ -74,7 +78,8 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 
 	if resp.StatusCode != http.StatusOK {
 		response := map[string]interface{}{
-			"Error": "Error during the request",
+			"Result":   "500",
+			"Response": "Error during the decoding of the response",
 		}
 
 		return response
@@ -83,7 +88,8 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	var response map[string]interface{}
 	if err := json.Unmarshal(bodyBytes, &response); err != nil {
 		response := map[string]interface{}{
-			"Error": "Error during the decoding of the response",
+			"Result":   "500",
+			"Response": "Error during the decoding of the response",
 		}
 
 		return response
@@ -121,7 +127,10 @@ func SignMessage(message string, privateKey string) map[string]interface{} {
 
 	bytesPrivateKey, err := hex.DecodeString(privateKey)
 	if err != nil {
-		return map[string]interface{}{"Error": "Error during the decoding of the private key"}
+		return map[string]interface{}{
+			"Result":   "500",
+			"Response": "Error during the decoding of the private key",
+		}
 	}
 
 	privKey := secp256k1.PrivKeyFromBytes(bytesPrivateKey)
@@ -129,13 +138,19 @@ func SignMessage(message string, privateKey string) map[string]interface{} {
 	messageHash := chainhash.HashB([]byte(message))
 	r, s, err := ecdsa.Sign(rand.Reader, privKey.ToECDSA(), messageHash)
 	if err != nil {
-		return map[string]interface{}{"Error": "Error during the signing of the message"}
+		return map[string]interface{}{
+			"Result":   "500",
+			"Response": "Error during the signing of the message",
+		}
 	}
 
 	derSignature, err := asn1.Marshal(ECDSASignature{R: r, S: s})
 
 	if err != nil {
-		return map[string]interface{}{"Error": "Error during the encoding of the signature"}
+		return map[string]interface{}{
+			"Result":   "500",
+			"Response": "Error during the encoding of the signature",
+		}
 	}
 
 	stringDERSignature := hex.EncodeToString(derSignature)
