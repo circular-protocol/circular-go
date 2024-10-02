@@ -185,7 +185,7 @@ func bytesToHex(b []byte) string {
 	return hex.EncodeToString(b)
 }
 
-func getKeysFromString(seedPhrase string) map[string]string {
+func GetKeysFromString(seedPhrase string) map[string]string {
 
 	seedHash := chainhash.DoubleHashB([]byte(seedPhrase))
 
