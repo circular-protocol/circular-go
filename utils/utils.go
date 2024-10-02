@@ -146,7 +146,7 @@ func SignMessage(message string, privateKey string) map[string]interface{} {
 	return map[string]interface{}{"Signature": stringDERSignature, "R": r, "S": s}
 }
 
-func verifySignature(message string, signature string, publicKey string) (bool, map[string]interface{}) {
+func VerifySignature(message string, signature string, publicKey string) (bool, map[string]interface{}) {
 
 	pubKeyBytes, err := hex.DecodeString(publicKey)
 	if err != nil {
