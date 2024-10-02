@@ -22,20 +22,24 @@ var __NAG_URL__ = "https://nag.circularlabs.io/NAG.php?cep="
 var __NAG_KEY__ = ""
 var __lastError__ = ""
 
-func setNAGKey(key string) {
+func SetNAGKey(key string) {
 	__NAG_KEY__ = key
 }
 
-func getNAGKey() string {
+func GetNAGKey() string {
 	return __NAG_KEY__
 }
 
-func setNAGURL(url string) {
+func SetNAGURL(url string) {
 	__NAG_URL__ = url
 }
 
-func getNAGURL() string {
+func GetNAGURL() string {
 	return __NAG_URL__
+}
+
+func GetVersion() string {
+	return __version__
 }
 
 /* 			SMART CONTRACT FUNCTIONS			*/
