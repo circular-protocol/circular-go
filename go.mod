@@ -1,4 +1,4 @@
-module github.com/circular-protocol/circular-go/circular_protocol_api
+module github.com/circular-protocol/circular-go
 
 go 1.21.6
 
