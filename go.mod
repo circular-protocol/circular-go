@@ -1,6 +1,6 @@
 module github.com/circular-protocol/circular-go
 
-go 1.21.6
+go 1.23.1
 
 require (
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1
