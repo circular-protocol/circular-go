@@ -1,4 +1,4 @@
-module github.com/dannydenovi/circular_go
+module github.com/circular-protocol/circular_go
 
 go 1.21.6
 

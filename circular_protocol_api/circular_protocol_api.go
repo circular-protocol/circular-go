@@ -1,4 +1,4 @@
-package circular
+package circular_protocol_api
 
 import (
 	"crypto/ecdsa"
@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/dannydenovi/circular_go/utils"
+	"github.com/circular-protocol/circular_go/utils"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
