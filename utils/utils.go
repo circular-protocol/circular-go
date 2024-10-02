@@ -185,7 +185,7 @@ func bytesToHex(b []byte) string {
 	return hex.EncodeToString(b)
 }
 
-func GenerateKeys(seedPhrase string) (map[string]string, error) {
+func GetKeysFromString(seedPhrase string) (map[string]string, error) {
 	// Generate private key using RFC 6979
 	hashHex := Sha256(seedPhrase)
 	hash, err := hex.DecodeString(hashHex)
@@ -200,7 +200,7 @@ func GenerateKeys(seedPhrase string) (map[string]string, error) {
 	privateKeyDER := privateKey.Serialize()
 
 	// Encode public key in DER format
-	publicKeyDER := publicKey.SerializeCompressed()
+	publicKeyDER := publicKey.SerializeUncompressed()
 
 	// Generate address from public key
 	address := sha256.Sum256(publicKey.SerializeCompressed())
