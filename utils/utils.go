@@ -181,6 +181,34 @@ func Sha256(data string) string {
 	return hex.EncodeToString(hash[:])
 }
 
+func bytesToHex(b []byte) string {
+	return hex.EncodeToString(b)
+}
+
+func getKeysFromString(seedPhrase string) map[string]string {
+
+	seedHash := chainhash.DoubleHashB([]byte(seedPhrase))
+
+	privateKey := secp256k1.PrivKeyFromBytes(seedHash)
+
+	publicKey := privateKey.PubKey()
+
+	publicKeyBytes := publicKey.SerializeCompressed()
+	publicKeyHex := bytesToHex(publicKeyBytes)
+
+	privateKeyHex := bytesToHex(privateKey.Serialize())
+
+	addressHash := Sha256(string(publicKeyBytes))
+	addressHex := bytesToHex([]byte(addressHash))
+
+	return map[string]string{
+		"publicKey":  publicKeyHex,
+		"privateKey": privateKeyHex,
+		"address":    addressHex,
+		"seedPhrase": seedPhrase,
+	}
+}
+
 // NAG FUNCTIONS
 
 const TEST_CONTRACT = "Circular_TestContract_"
