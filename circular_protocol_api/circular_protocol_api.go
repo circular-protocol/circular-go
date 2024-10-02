@@ -1,19 +1,13 @@
 package circular_protocol_api
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
-	"encoding/asn1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"strconv"
 	"time"
 
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/circular-protocol/circular-go/utils"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 const __version__ = "1.0.8"
@@ -73,6 +67,7 @@ func TestContract(blockchain string, sender string, project string) map[string]i
 func CallContract(blockchain string, from string, project string, request string) map[string]interface{} {
 
 	data := map[string]interface{}{
+		"Address":    utils.HexFix(project),
 		"Blockchain": utils.HexFix(blockchain),
 		"From":       utils.HexFix(from),
 		"Timestamp":  utils.GetFormattedTimestamp(),
@@ -168,7 +163,7 @@ func GetWalletBalance(blockchain string, address string, asset string) map[strin
 * @return id string - transaction ID
 * @return error - error
  */
-func RegisterWallet(blockchain string, publicKey string) (string, error) {
+func RegisterWallet(blockchain string, publicKey string) map[string]interface{} {
 	blockchain = utils.HexFix(blockchain)
 	publicKey = utils.HexFix(publicKey)
 
@@ -183,7 +178,9 @@ func RegisterWallet(blockchain string, publicKey string) (string, error) {
 
 	jsonData, err := json.Marshal(payloadObj)
 	if err != nil {
-		return "", fmt.Errorf("errore nella codifica JSON: %w", err)
+		return map[string]interface{}{
+			"Error": "Wrong payload format",
+		}
 	}
 
 	payload := hex.EncodeToString(jsonData)
@@ -195,10 +192,7 @@ func RegisterWallet(blockchain string, publicKey string) (string, error) {
 	id := utils.Sha256(dataToHash)
 	signature := ""
 
-	SendTransaction(id, sender, to, timestamp, Type, payload, nonce, signature, blockchain)
-
-	return id, nil
-
+	return SendTransaction(id, sender, to, timestamp, Type, payload, nonce, signature, blockchain)
 }
 
 /* 			DOMAIN MANAGEMENT			*/
@@ -243,7 +237,7 @@ func GetAssetList(blockchain string) map[string]interface{} {
 func GetAsset(blockchain string, asset string) map[string]interface{} {
 	data := map[string]interface{}{
 		"Blockchain": utils.HexFix(blockchain),
-		"Asset":      utils.HexFix(asset),
+		"AssetName":  utils.HexFix(asset),
 		"Version":    __version__,
 	}
 	return utils.SendRequest(data, utils.GET_ASSET, __NAG_URL__)
@@ -258,7 +252,7 @@ func GetAsset(blockchain string, asset string) map[string]interface{} {
 func GetAssetSupply(blockchain string, asset string) map[string]interface{} {
 	data := map[string]interface{}{
 		"Blockchain": utils.HexFix(blockchain),
-		"Asset":      utils.HexFix(asset),
+		"AssetName":  utils.HexFix(asset),
 		"Version":    __version__,
 	}
 	return utils.SendRequest(data, utils.GET_ASSET_SUPPLY, __NAG_URL__)
@@ -291,8 +285,8 @@ func GetVoucher(blockchain string, code string) map[string]interface{} {
 func GetBlockRange(blockchain string, start int, end int) map[string]interface{} {
 	data := map[string]interface{}{
 		"Blockchain": utils.HexFix(blockchain),
-		"Start":      start,
-		"End":        end,
+		"Start":      strconv.Itoa(start),
+		"End":        strconv.Itoa(end),
 		"Version":    __version__,
 	}
 	return utils.SendRequest(data, utils.GET_BLOCK_RANGE, __NAG_URL__)
@@ -307,7 +301,7 @@ func GetBlockRange(blockchain string, start int, end int) map[string]interface{}
 func GetBlock(blockchain string, number int) map[string]interface{} {
 	data := map[string]interface{}{
 		"Blockchain":  utils.HexFix(blockchain),
-		"BlockNumber": number,
+		"BlockNumber": strconv.Itoa(number),
 		"Version":     __version__,
 	}
 	return utils.SendRequest(data, utils.GET_BLOCK, __NAG_URL__)
@@ -376,12 +370,12 @@ func GetPendingTransaction(blockchain string, TxID string) map[string]interface{
 *
 * If end = 0 then start is the number of blocks form the last one minted
  */
-func GetTransactionByID(blockchain string, TxID string, start string, end string) map[string]interface{} {
+func GetTransactionByID(blockchain string, TxID string, start int, end int) map[string]interface{} {
 	data := map[string]interface{}{
 		"Blockchain": utils.HexFix(blockchain),
 		"ID":         utils.HexFix(TxID),
-		"Start":      start,
-		"End":        end,
+		"Start":      strconv.Itoa(start),
+		"End":        strconv.Itoa(end),
 		"Version":    __version__,
 	}
 	return utils.SendRequest(data, utils.GET_TRANSACTION_BY_ID, __NAG_URL__)
@@ -397,12 +391,12 @@ func GetTransactionByID(blockchain string, TxID string, start string, end string
 *
 * If end = 0 then start is the number of blocks form the last one minted
  */
-func GetTransactionByNode(blockchain string, node string, start string, end string) map[string]interface{} {
+func GetTransactionByNode(blockchain string, node string, start int, end int) map[string]interface{} {
 	data := map[string]interface{}{
 		"Blockchain": utils.HexFix(blockchain),
 		"NodeID":     utils.HexFix(node),
-		"Start":      start,
-		"End":        end,
+		"Start":      strconv.Itoa(start),
+		"End":        strconv.Itoa(end),
 		"Version":    __version__,
 	}
 	return utils.SendRequest(data, utils.GET_TRANSACTION_BY_NODE, __NAG_URL__)
@@ -418,12 +412,12 @@ func GetTransactionByNode(blockchain string, node string, start string, end stri
 *
 * If end = 0 then start is the number of blocks form the last one minted
  */
-func GetTransactionByAddress(blockchain string, address string, start string, end string) map[string]interface{} {
+func GetTransactionByAddress(blockchain string, address string, start int, end int) map[string]interface{} {
 	data := map[string]interface{}{
 		"Blockchain": utils.HexFix(blockchain),
 		"Address":    utils.HexFix(address),
-		"Start":      start,
-		"End":        end,
+		"Start":      strconv.Itoa(start),
+		"End":        strconv.Itoa(end),
 		"Version":    __version__,
 	}
 	return utils.SendRequest(data, utils.GET_TRANSACTIONS_BY_ADDRESS, __NAG_URL__)
@@ -461,12 +455,12 @@ func GetTransactionByDate(blockchain string, address string, startDate string, e
 * @return id string - transaction ID
 * @return error - error
  */
-func SendTransaction(id string, sender string, to string, timeStamp string, transactionType string, payload string, nonce string, signature string, blockchain string) map[string]interface{} {
+func SendTransaction(id string, sender string, to string, timestamp string, transactionType string, payload string, nonce string, signature string, blockchain string) map[string]interface{} {
 	data := map[string]interface{}{
 		"ID":         utils.HexFix(id),
 		"From":       utils.HexFix(sender),
 		"To":         utils.HexFix(to),
-		"Timestamp":  timeStamp,
+		"Timestamp":  timestamp,
 		"Type":       transactionType,
 		"Payload":    payload,
 		"Nonce":      nonce,
@@ -524,41 +518,60 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 	dataToHash := blockchain + from + to + hexPayload + newNonce + timestamp
 	id := utils.Sha256(dataToHash)
 
-	bytesPrivateKey, err := hex.DecodeString(privateKey)
-	if err != nil {
+	/* 	bytesPrivateKey, err := hex.DecodeString(privateKey)
+	   	if err != nil {
+	   		return map[string]interface{}{
+	   			"Error": "Error during the decoding of the private key", "Details": err,
+	   		}
+	   	}
+
+	   	privKey := secp256k1.PrivKeyFromBytes(bytesPrivateKey)
+	   	messageHash := chainhash.HashB([]byte(id))
+	   	r, s, err := ecdsa.Sign(rand.Reader, privKey.ToECDSA(), messageHash)
+	   	if err != nil {
+	   		return map[string]interface{}{
+	   			"Error": "Error during the signature", "Details": err,
+	   		}
+	   	}
+	   	type ECDSASignature struct {
+	   		R, S *big.Int
+	   	}
+
+	   	derSignature, err := asn1.Marshal(ECDSASignature{R: r, S: s})
+
+	   	if err != nil {
+	   		return map[string]interface{}{
+	   			"Error": "Error during the DER conversion", "Details": err,
+	   		}
+	   	}
+
+	   	stringDERSignature := hex.EncodeToString(derSignature) */
+
+	signature := utils.SignMessage(id, privateKey)
+
+	if signature["Error"] != nil {
 		return map[string]interface{}{
-			"Error": "Error during the decoding of the private key", "Details": err,
+			"Error": "Error during the signature",
 		}
 	}
 
-	privKey := secp256k1.PrivKeyFromBytes(bytesPrivateKey)
-	messageHash := chainhash.HashB([]byte(id))
-	r, s, err := ecdsa.Sign(rand.Reader, privKey.ToECDSA(), messageHash)
-	if err != nil {
+	/* r := signature["R"]
+	s := signature["S"] */
+
+	stringDERSignature := signature["Signature"].(string)
+	isValid, verification := utils.VerifySignature(id, stringDERSignature, privateKey)
+	if !isValid || verification["Error"] != nil {
 		return map[string]interface{}{
-			"Error": "Error during the signature", "Details": err,
+			"Error": "Error during the verification of the signature",
 		}
 	}
-	type ECDSASignature struct {
-		R, S *big.Int
-	}
-
-	derSignature, err := asn1.Marshal(ECDSASignature{R: r, S: s})
-
-	if err != nil {
-		return map[string]interface{}{
-			"Error": "Error during the DER conversion", "Details": err,
-		}
-	}
-
-	stringDERSignature := hex.EncodeToString(derSignature)
-
-	pubKey := privKey.PubKey()
-	if !ecdsa.Verify(pubKey.ToECDSA(), messageHash, r, s) {
-		return map[string]interface{}{
-			"Error": "Signature verification failed",
-		}
-	}
+	/*
+		pubKey := privKey.PubKey()
+		if !ecdsa.Verify(pubKey.ToECDSA(), messageHash, r, s) {
+			return map[string]interface{}{
+				"Error": "Signature verification failed",
+			}
+		} */
 
 	response = SendTransaction(id, from, to, timestamp, transactionType, hexPayload, newNonce, stringDERSignature, blockchain)
 	return response
@@ -586,7 +599,7 @@ func GetTransactionOutcome(Blockchain string, TxID string, timeoutSec int, inter
 			return "Timeout exceeded"
 		}
 		// Get the transaction
-		data := GetTransactionByID(Blockchain, TxID, "0", "10")
+		data := GetTransactionByID(Blockchain, TxID, 0, 10)
 
 		fmt.Println("Data received:", data)
 		if data["Result"] == 200 && data["Response"] != "Transaction Not Found" && data["Response"].(string) != "Pending" {

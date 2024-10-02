@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/asn1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,9 @@ import (
 	"math/big"
 	"net/http"
 	"time"
+
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 /* SendRequest sends an HTTP POST request with JSON data
@@ -26,7 +30,7 @@ import (
 func SendRequest(data interface{}, nagFunction string, nagURL string) map[string]interface{} {
 	url := nagURL + nagFunction
 
-	// Codifica i dati in JSON
+	// Convert the data to JSON
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		response := map[string]interface{}{
@@ -36,7 +40,7 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 		return response
 	}
 
-	// Crea la richiesta HTTP
+	// Create the request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		response := map[string]interface{}{
@@ -47,7 +51,7 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	// Invia la richiesta HTTP
+	// Send the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -59,7 +63,7 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	}
 	defer resp.Body.Close()
 
-	// Legge e gestisce la risposta HTTP
+	// Read the response and decode it
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		response := map[string]interface{}{
@@ -109,97 +113,82 @@ type ECSignature struct {
 }
 
 /* // SignMessage firma un messaggio con una chiave privata in formato hex e restituisce la firma in formato hex.
-func SignMessage(message string, privateKeyHex string) (string, error) {
-	// Converti la chiave privata hex in formato binario
-	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
+* @param message string - message to sign
+* @param privateKey string - private key in hex format
+* @return string - signature in hex format
+ */
+
+func SignMessage(message string, privateKey string) map[string]interface{} {
+
+	bytesPrivateKey, err := hex.DecodeString(privateKey)
 	if err != nil {
-		return "", fmt.Errorf("invalid private key format: %v", err)
+		return map[string]interface{}{"Error": "Error during the decoding of the private key"}
 	}
 
-	// Verifica che la lunghezza della chiave privata sia corretta
-	if len(privateKeyBytes) != 32 {
-		return "", fmt.Errorf("private key must be 32 bytes")
-	}
+	privKey := secp256k1.PrivKeyFromBytes(bytesPrivateKey)
 
-	// Crea la chiave privata ECDSA
-	privateKey := ecdsa.PrivateKey{
-		PublicKey: ecdsa.PublicKey{
-			Curve: elliptic.P256(), // Usa la curva secp256k1
-			X:     big.NewInt(0),
-			Y:     big.NewInt(0),
-		},
-		D: new(big.Int).SetBytes(privateKeyBytes),
-	}
-
-	// Calcola l'hash del messaggio
-	hash := sha256.Sum256([]byte(message))
-
-	// Calcola il nonce deterministico usando RFC 6979
-	k := getDeterministicNonce(hash[:], privateKey.D)
-
-	// Calcola la firma ECDSA
-	r, s, err := ecdsa.Sign(rand.Reader, &privateKey, hash[:])
+	messageHash := chainhash.HashB([]byte(message))
+	r, s, err := ecdsa.Sign(rand.Reader, privKey.ToECDSA(), messageHash)
 	if err != nil {
-		return "", fmt.Errorf("error during the signature: %v", err)
+		return map[string]interface{}{"Error": "Error during the signing of the message"}
+	}
+	type ECDSASignature struct {
+		R, S *big.Int
 	}
 
-	// Codifica la firma nel formato DER
-	sig, err := asn1.Marshal(ecdsaSignature{r, s})
+	derSignature, err := asn1.Marshal(ECDSASignature{R: r, S: s})
+
 	if err != nil {
-		return "", fmt.Errorf("error marshaling signature: %v", err)
+		return map[string]interface{}{"Error": "Error during the encoding of the signature"}
 	}
 
-	// Converti la firma DER in una stringa hex
-	hexSignature := hex.EncodeToString(sig)
+	stringDERSignature := hex.EncodeToString(derSignature)
+	return map[string]interface{}{"Signature": stringDERSignature, "R": r, "S": s}
+}
 
-	return hexSignature, nil
-} */
+func VerifySignature(message string, signature string, publicKey string) (bool, map[string]interface{}) {
 
-/* // getDeterministicNonce genera un nonce deterministico secondo RFC 6979
-func getDeterministicNonce(hash []byte, privateKey *big.Int) *big.Int {
-	// Questa è una semplificazione. Dovresti implementare il vero RFC 6979 qui.
-	// L'implementazione completa richiede un po' più di logica.
-
-	// Usando un hash della chiave privata e del messaggio per determinare k
-	h1 := sha256.New()
-	h1.Write(privateKey.Bytes())
-	h1.Write(hash)
-	k := new(big.Int).SetBytes(h1.Sum(nil))
-
-	// Assicurati che k sia valido per la curva (k deve essere in [1, n-1])
-	n := elliptic.P256().Params().N
-	k.Mod(k, n)
-	if k.Cmp(big.NewInt(1)) < 0 {
-		k.Set(big.NewInt(1))
-	} else if k.Cmp(n) >= 0 {
-		k.Set(new(big.Int).Sub(n, big.NewInt(1)))
+	pubKeyBytes, err := hex.DecodeString(publicKey)
+	if err != nil {
+		return false, map[string]interface{}{
+			"Error": "Error during the decoding of the public key",
+		}
+	}
+	pubKey, err := secp256k1.ParsePubKey(pubKeyBytes)
+	if err != nil {
+		return false, map[string]interface{}{
+			"Error": "Error during the parsing of the public key",
+		}
 	}
 
-	return k
-} */
-
-// VerifySignature verifies a signature given a public key, message and signature
-func VerifySignature(publicKey string, message string, signature []byte) bool {
-	r := new(big.Int).SetBytes(signature[:32])
-	s := new(big.Int).SetBytes(signature[32:])
-	hash := sha256.Sum256([]byte(message))
-
-	x, y := big.NewInt(0), big.NewInt(0)
-	publicKeyBytes, _ := hex.DecodeString(publicKey)
-	publicKeyCurve := elliptic.P256()
-	if len(publicKeyBytes) != 64 {
-		return false
-	}
-	x.SetBytes(publicKeyBytes[:32])
-	y.SetBytes(publicKeyBytes[32:])
-
-	publicKeyStruct := ecdsa.PublicKey{
-		Curve: publicKeyCurve,
-		X:     x,
-		Y:     y,
+	signatureBytes, err := hex.DecodeString(signature)
+	if err != nil {
+		return false, map[string]interface{}{
+			"Error": "Error during the decoding of the signature",
+		}
 	}
 
-	return ecdsa.Verify(&publicKeyStruct, hash[:], r, s)
+	var ecdsaSignature ECSignature
+	_, err = asn1.Unmarshal(signatureBytes, &ecdsaSignature)
+	if err != nil {
+		return false, map[string]interface{}{
+			"Error": "Error during the unmarshalling of the signature",
+		}
+	}
+
+	messageHash := chainhash.HashB([]byte(message))
+	r := ecdsaSignature.R
+	s := ecdsaSignature.S
+
+	if !ecdsa.Verify(pubKey.ToECDSA(), messageHash, r, s) {
+		return false, map[string]interface{}{
+			"Error": "Signature verification failed",
+		}
+	}
+
+	return true, map[string]interface{}{
+		"Result": "Signature verification successful",
+	}
 }
 
 func GetPublicKey(privateKey string) (string, error) {
