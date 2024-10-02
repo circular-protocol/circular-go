@@ -98,6 +98,41 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	return response
 }
 
+func VerifySignature(message string, signature string, publicKey string) bool {
+
+	// Decode the signature
+	signatureBytes, err := hex.DecodeString(signature)
+	if err != nil {
+		return false
+	}
+
+	// Decode the public key
+	publicKeyBytes, err := hex.DecodeString(publicKey)
+	if err != nil {
+		return false
+	}
+
+	// Decode the message
+	messageHash := chainhash.HashB([]byte(message))
+
+	// Decode the signature
+	var ecdsaSignature ECDSASignature
+	_, err = asn1.Unmarshal(signatureBytes, &ecdsaSignature)
+	if err != nil {
+		return false
+	}
+
+	// Decode the public key
+	publicKeyECDSA, err := secp256k1.ParsePubKey(publicKeyBytes)
+	if err != nil {
+		return false
+	}
+
+	// Verify the signature
+	ecdsaPublicKey := publicKeyECDSA.ToECDSA()
+	return ecdsa.Verify(ecdsaPublicKey, messageHash, ecdsaSignature.R, ecdsaSignature.S)
+}
+
 // PadNumber pads a number with leading zeros to number less than 10
 func PadNumber(number int) string {
 	if number < 10 {
