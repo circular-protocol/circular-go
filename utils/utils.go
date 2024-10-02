@@ -146,50 +146,15 @@ func SignMessage(message string, privateKey string) map[string]interface{} {
 	return map[string]interface{}{"Signature": stringDERSignature, "R": r, "S": s}
 }
 
-func VerifySignature(message string, signature string, publicKey string) (bool, map[string]interface{}) {
+/* func VerifySignature(message string, signature string, publicKey string) (bool, map[string]interface{}) {
 
-	pubKeyBytes, err := hex.DecodeString(publicKey)
-	if err != nil {
-		return false, map[string]interface{}{
-			"Error": "Error during the decoding of the public key",
-		}
-	}
-	pubKey, err := secp256k1.ParsePubKey(pubKeyBytes)
-	if err != nil {
-		return false, map[string]interface{}{
-			"Error": "Error during the parsing of the public key",
-		}
-	}
-
-	signatureBytes, err := hex.DecodeString(signature)
-	if err != nil {
-		return false, map[string]interface{}{
-			"Error": "Error during the decoding of the signature",
-		}
-	}
-
-	var ecdsaSignature ECSignature
-	_, err = asn1.Unmarshal(signatureBytes, &ecdsaSignature)
-	if err != nil {
-		return false, map[string]interface{}{
-			"Error": "Error during the unmarshalling of the signature",
-		}
-	}
-
-	messageHash := chainhash.HashB([]byte(message))
-	r := ecdsaSignature.R
-	s := ecdsaSignature.S
-
+	pubKey := privKey.PubKey()
 	if !ecdsa.Verify(pubKey.ToECDSA(), messageHash, r, s) {
-		return false, map[string]interface{}{
+		return map[string]interface{}{
 			"Error": "Signature verification failed",
 		}
 	}
-
-	return true, map[string]interface{}{
-		"Result": "Signature verification successful",
-	}
-}
+} */
 
 func GetPublicKey(privateKey string) (string, error) {
 	// Decodifica la chiave privata dalla sua rappresentazione esadecimale
