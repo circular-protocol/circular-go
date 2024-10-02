@@ -98,41 +98,6 @@ func SendRequest(data interface{}, nagFunction string, nagURL string) map[string
 	return response
 }
 
-func VerifySignature(message string, signature string, publicKey string) bool {
-
-	// Decode the signature
-	signatureBytes, err := hex.DecodeString(signature)
-	if err != nil {
-		return false
-	}
-
-	// Decode the public key
-	publicKeyBytes, err := hex.DecodeString(publicKey)
-	if err != nil {
-		return false
-	}
-
-	// Decode the message
-	messageHash := chainhash.HashB([]byte(message))
-
-	// Decode the signature
-	var ecdsaSignature ECDSASignature
-	_, err = asn1.Unmarshal(signatureBytes, &ecdsaSignature)
-	if err != nil {
-		return false
-	}
-
-	// Decode the public key
-	publicKeyECDSA, err := secp256k1.ParsePubKey(publicKeyBytes)
-	if err != nil {
-		return false
-	}
-
-	// Verify the signature
-	ecdsaPublicKey := publicKeyECDSA.ToECDSA()
-	return ecdsa.Verify(ecdsaPublicKey, messageHash, ecdsaSignature.R, ecdsaSignature.S)
-}
-
 // PadNumber pads a number with leading zeros to number less than 10
 func PadNumber(number int) string {
 	if number < 10 {
@@ -233,6 +198,70 @@ func Sha256(data string) string {
 
 func bytesToHex(b []byte) string {
 	return hex.EncodeToString(b)
+}
+
+func VerifySignature(publicKey string, message string, signature string) bool {
+	if len(publicKey) != 130 {
+		fmt.Println("Invalid public key length")
+		return false
+	}
+
+	// Remove the 0x prefix from the public key
+	remove0x := HexFix(publicKey)
+
+	// Hash the message to verify with SHA256
+	msgHash := sha256.Sum256([]byte(message))
+
+	// Decode the public key from hex
+	publicKeyBytes, err := hex.DecodeString(remove0x)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// Parse the public key
+	pubKey, err := secp256k1.ParsePubKey(publicKeyBytes)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// Convert btcec.PublicKey to ecdsa.PublicKey
+	ecdsaPubKey := ecdsa.PublicKey{
+		Curve: secp256k1.S256(),
+		X:     pubKey.X(),
+		Y:     pubKey.Y(),
+	}
+
+	// Decode the signature from hex
+	signatureBytes, err := hex.DecodeString(signature)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// Parse the signature from DER format
+	var ecsig ECDSASignature
+	_, err = asn1.Unmarshal(signatureBytes, &ecsig)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// Verify the signature
+	return ecdsa.Verify(&ecdsaPubKey, msgHash[:], ecsig.R, ecsig.S)
+}
+
+func GetPublicKey(privateKey string) string {
+	privKeyBytes, err := hex.DecodeString(privateKey)
+	if err != nil {
+		return ""
+	}
+
+	privKey := secp256k1.PrivKeyFromBytes(privKeyBytes)
+	pubKey := privKey.PubKey()
+
+	return hex.EncodeToString(pubKey.SerializeUncompressed())
 }
 
 func GetKeysFromString(seedPhrase string) (map[string]string, error) {
