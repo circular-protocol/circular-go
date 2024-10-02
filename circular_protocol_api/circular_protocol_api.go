@@ -594,7 +594,3 @@ func GetTransactionOutcome(Blockchain string, TxID string, timeoutSec int, inter
 	}
 	return checkTransaction()
 }
-
-func main() {
-
-}
