@@ -527,13 +527,13 @@ func SendTransactionWithPK(from string, privateKey string, to string, payload ma
 	}
 
 	stringDERSignature := signature["Signature"].(string)
-	/* 	isValid, verification := utils.VerifySignature(id, stringDERSignature, privateKey)
-	   	if !isValid || verification["Error"] != nil {
-	   		return map[string]interface{}{
-	   			"Error": "Error during the verification of the signature",
-	   		}
-	   	}
-	*/
+	isValid, verification := utils.VerifySignature(id, stringDERSignature, privateKey)
+	if !isValid || verification["Error"] != nil {
+		return map[string]interface{}{
+			"Error": "Error during the verification of the signature",
+		}
+	}
+
 	response = SendTransaction(id, from, to, timestamp, transactionType, hexPayload, newNonce, stringDERSignature, blockchain)
 	return response
 }
