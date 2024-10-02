@@ -186,25 +186,29 @@ func bytesToHex(b []byte) string {
 }
 
 func GetKeysFromString(seedPhrase string) map[string]string {
-
 	seedHash := chainhash.DoubleHashB([]byte(seedPhrase))
 
 	privateKey := secp256k1.PrivKeyFromBytes(seedHash)
 
 	publicKey := privateKey.PubKey()
 
-	publicKeyBytes := publicKey.SerializeCompressed()
-	publicKeyHex := bytesToHex(publicKeyBytes)
+	publicKeyASN1 := ECDSASignature{
+		R: publicKey.X(),
+		S: publicKey.Y(),
+	}
+	publicKeyDER, _ := asn1.Marshal(publicKeyASN1)
 
-	privateKeyHex := bytesToHex(privateKey.Serialize())
+	publicKeyHex := bytesToHex(publicKeyDER)
+	addressHash := Sha256(publicKeyHex)
 
-	addressHash := Sha256(string(publicKeyBytes))
-	addressHex := bytesToHex([]byte(addressHash))
+	publicKeyString := hex.EncodeToString(publicKey.SerializeCompressed())
+	addressString := hex.EncodeToString([]byte(addressHash))
+	privateKeyString := hex.EncodeToString(privateKey.Serialize())
 
 	return map[string]string{
-		"publicKey":  publicKeyHex,
-		"privateKey": privateKeyHex,
-		"address":    addressHex,
+		"publicKey":  publicKeyString,
+		"address":    addressString,
+		"privateKey": privateKeyString,
 		"seedPhrase": seedPhrase,
 	}
 }
