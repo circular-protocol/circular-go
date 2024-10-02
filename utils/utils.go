@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/asn1"
@@ -145,29 +144,6 @@ func SignMessage(message string, privateKey string) map[string]interface{} {
 
 type ECDSASignature struct {
 	R, S *big.Int
-}
-
-func GetPublicKey(privateKey string) (string, error) {
-	// Decodifica la chiave privata dalla sua rappresentazione esadecimale
-	privKeyBytes, err := hex.DecodeString(privateKey)
-	if err != nil {
-		return "", err
-	}
-
-	// Genera una nuova chiave ECDSA utilizzando la curva ellittica P-256
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return "", err
-	}
-
-	// Imposta la parte segreta della chiave generata utilizzando la chiave privata fornita
-	key.D = new(big.Int).SetBytes(privKeyBytes)
-
-	// Ottiene la rappresentazione dei punti della chiave pubblica in formato compresso
-	publicKeyBytes := elliptic.MarshalCompressed(key.Curve, key.X, key.Y)
-
-	// Restituisce la chiave pubblica in formato esadecimale
-	return hex.EncodeToString(publicKeyBytes), nil
 }
 
 // StringToHex converts a string to a hexadecimal string
