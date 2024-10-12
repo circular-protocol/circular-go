@@ -42,3 +42,7 @@ For more information, check out the official documentation or reach out to the C
 
 ## Mantainers
 - Danny De Novi: dannydenovi29@gmail.com
+
+## License
+
+This library is open-source and available for both private and commercial use. For detailed terms, please refer to the LICENSE file provided in the repository.
