@@ -1,3 +1,9 @@
+/*
+ * Author: Danny De Novi (dannydenovi29@gmail.com)
+ * Date: 12/10/2024
+ * License: MIT
+ */
+
 package circular_protocol_api
 
 import (
