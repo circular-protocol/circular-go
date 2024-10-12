@@ -1,19 +1,13 @@
 package circular_protocol_api
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
-	"encoding/asn1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"strconv"
 	"time"
 
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/circular-protocol/circular-go/utils"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 const __version__ = "1.0.8"
