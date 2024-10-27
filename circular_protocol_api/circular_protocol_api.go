@@ -477,6 +477,9 @@ func SendTransaction(id string, sender string, to string, timestamp string, tran
 	return utils.SendRequest(data, utils.SEND_TRANSACTION, __NAG_URL__)
 }
 
+
+var intervalSec = 5
+
 /* Recursive transaction finality polling
 * will search a transaction every intervalSec seconds witha  desired timeout
 * @param blockchain string - blockchain to check
@@ -486,24 +489,28 @@ func SendTransaction(id string, sender string, to string, timestamp string, tran
 * @return map[string]interface{} - response
 * @return error - error
  */
-func GetTransactionOutcome(Blockchain string, TxID string, timeoutSec int, intervalSec int) string {
+func GetTransactionOutcome(Blockchain string, TxID string, timeoutSec int) string {
 	startTime := time.Now()
 	interval := time.Duration(intervalSec) * time.Second
 	timeout := time.Duration(timeoutSec) * time.Second
 	var checkTransaction func() string
 	checkTransaction = func() string {
 		elapsedTime := time.Since(startTime)
-		fmt.Println("Checking transaction...", elapsedTime, timeout)
+		fmt.Println("Checking transaction...x", elapsedTime, timeout)
 		if elapsedTime > timeout {
 			fmt.Println("Timeout exceeded")
 			return "Timeout exceeded"
 		}
-		// Get the transaction
 		data := GetTransactionByID(Blockchain, TxID, 0, 10)
 
 		fmt.Println("Data received:", data)
-		if data["Result"] == 200 && data["Response"] != "Transaction Not Found" && data["Response"].(string) != "Pending" {
-			return data["Response"].(string)
+
+		if result, ok := data["Result"].(float64); ok && result == 200 {
+			response, ok := data["Response"].(map[string]interface{})
+			if ok && response["Status"] != "Pending" && response["Status"] != "Transaction Not Found" {
+				fmt.Println("OK!")
+				return response["Status"].(string)
+			}
 		}
 		fmt.Println("Transaction not yet confirmed or not found, polling again...")
 		time.Sleep(interval)
@@ -511,3 +518,4 @@ func GetTransactionOutcome(Blockchain string, TxID string, timeoutSec int, inter
 	}
 	return checkTransaction()
 }
+
